@@ -1,0 +1,194 @@
+---
+title: "Book Reviews"
+author: "Bena"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+As a data analyst for a company that sells books for learning programming, your company has produced multiple books, and each has received many reviews. The company wants us to check out the sales data and see if we can extract any useful information from it. 
+
+
+```{r setup}
+setwd("D:/BENA/Data Analytics/Dataquest/Project2_DataCleaning")
+save.image("book_reviews.RData")
+savehistory("book_reviews.Rhistory")
+
+library(tidyverse)
+```
+
+## Import data
+
+```{r}
+book_reviews <- read_csv("D:/BENA/Data Analytics/Dataquest/Project2_DataCleaning/book_reviews.csv")
+```
+
+## About data
+
+```{r}
+dim(book_reviews)
+glimpse(book_reviews)
+colnames(book_reviews)
+typeof(book_reviews)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Data type for each column
+
+```{r}
+for (col in colnames(book_reviews)) {
+ print(typeof(book_reviews[[col]]))
+}
+```
+
+## Unique values in each column
+
+```{r}
+for (val in colnames(book_reviews)) {
+  print("unique values")
+  print(val)
+  print(unique(book_reviews[[val]]))
+}
+```
+
+## Handling missing data
+
+```{r}
+book_reviews_nonulls <- book_reviews %>%
+  filter(!is.na(review))
+
+dim(book_reviews_nonulls)
+View(book_reviews_nonulls)
+```
+
+## Investigate missing data
+
+```{r}
+book_reviews_nulls <- book_reviews %>%
+  filter(is.na(review))
+
+View(book_reviews_nulls)
+
+nulls_per_book <- book_reviews_nulls %>%
+  group_by(book) %>%
+  summarise(
+    nulls = n()
+  ) %>%
+  arrange(-nulls)
+
+nulls_per_state <- book_reviews_nulls %>%
+  group_by(state)%>%
+  summarise(
+    nulls = n()
+  ) %>%
+  arrange(-nulls)
+```
+
+Some 206 rows with nulls in the reviews column were deleted. We still have 89.7% of our data available.
+
+Nulls per book are:
+1 Fundamentals of R For Beginners    44
+2 R For Dummies                      49
+3 R Made Easy                        37
+4 Secrets Of R For Advanced Students 46
+5 Top 10 Mistakes R Beginners Make   30
+
+Nulls per state are:
+1 TX 62
+2 CA 54
+3 NY 47
+4 FL 43
+
+## Standardize values in state column
+
+```{r}
+book_reviews_nonulls <- book_reviews_nonulls %>%
+  mutate(
+    state = case_when(
+      state == "Texas" ~ "TX",
+      state == "California" ~ "CA",
+      state == "Florida" ~ "FL",
+      state == "New York" ~ "NY",
+      TRUE ~ state
+    )
+  )
+
+book_reviews_nulls <- book_reviews_nulls %>%
+  mutate(
+    state = case_when(
+      state == "Texas" ~ "TX",
+      state == "California" ~ "CA",
+      state == "Florida" ~ "FL",
+      state == "New York" ~ "NY",
+      TRUE ~ state
+    )
+  )
+```
+
+Have a look at the results
+
+```{r}
+View(book_reviews_nonulls)
+```
+
+## Transform text data to number type data
+
+```{r}
+book_reviews_nonulls <- book_reviews_nonulls %>%
+  mutate(
+    review_num = case_when(
+      review == "Poor" ~ 1,
+      review == "Fair" ~ 2,
+      review == "Good" ~ 3,
+      review == "Great" ~ 4,
+      review == "Excellent" ~ 5
+    )
+  )
+
+book_reviews_nonulls <- book_reviews_nonulls %>%
+  mutate(
+    is_high_review = if_else(review_num >= 4,TRUE,FALSE) 
+  )
+```
+
+## Finding the most profitable book
+
+```{r}
+profitable_book <- book_reviews_nonulls %>%
+  group_by(book) %>%
+  summarize(
+    total_price = sum(price)
+  ) %>%
+  arrange(-total_price)
+```
+
+Secrets of R For Advanced Students had the highest total price. 
+Alternatively, considering the number of books sold.
+
+```{r}
+profitable_book <- book_reviews_nonulls %>%
+  group_by(book) %>%
+  summarize(
+    no_purchased = n()
+  ) %>%
+  arrange(-no_purchased)
+```
+
+Fundamentals of R For Beginners had the highest number of purchases
+
+
+## Reporting the results
+
+This analysis is motivated by the fact that the company wants us to explore the book sales data and gain valuable insights from it. Therein, we have quantitative data i.e. price and qualitative data such as reviews. More information is also provided i.e. the book name and state where the sale was made. The main question we’re trying to answer is how profitable are the book sales.
+
+In the data preparation, some of the things that had to be done to make it more usable include:
+	Converting data in the review column from string to numeric i.e. 1 to 5, 5 being excellent
+	Filtering missing data and reviewing it closely
+	Standardizing state names to respective abbreviated code names eg from California to CA
+	Aggregating the data using group by and count functions among others.
+	Sorting out the data to find out which had the highest/lowest number of factor of interest eg highest no. of books sold, ordering revenue earned from each book, book with the most no. of favorable reviews.
+	Used control flow and logicals to categorize the data.
+
+In conclusion, the most profitable book in terms of revenue earned was Secrets of R For Advanced Students & the book with highest number sold was Fundamentals of R For Beginners.
+More information could also be provided that would aid in knowing what time of the year most sales are made. It could also be helpful in determining whether or not to do a sales & marketing campaign and what time would be the best to do that.
+These findings could be helpful to the stores & procurement or publishing section of the company. They’re now more aware of which books they should stock up more of. 
