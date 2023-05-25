@@ -9,7 +9,7 @@ As a data analyst for a company that sells books for learning programming, your 
 
 
 ```{r setup}
-setwd("D:/BENA/Data Analytics/Dataquest/Project2_DataCleaning")
+setwd("./Project2_DataCleaning")
 save.image("book_reviews.RData")
 savehistory("book_reviews.Rhistory")
 
